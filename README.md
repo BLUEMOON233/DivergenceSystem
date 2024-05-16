@@ -6,8 +6,9 @@ C/S主要使用java中的Socket实现
 数据库使用MySql数据库
 
 采用的设计模式：
-单例模式——Server
-代理模式——DatabaseOperator
-适配器模式——ServerHandleThread
-组合模式——Java Swing
-工厂模式——ClientFactory
+
+- 单例模式——Server
+- 代理模式——DatabaseOperator
+- 适配器模式——ServerHandleThread
+- 组合模式——Java Swing
+- 工厂模式——ClientFactory
