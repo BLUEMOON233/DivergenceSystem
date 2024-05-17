@@ -183,7 +183,9 @@ public class DatabaseOperator {
 
     public void addMajor(String majorName) {
         try {
-            String sql = """
+            String sql = "insert into major (code, name, class) values (0, 'temp', 0);";
+            stmt.executeUpdate(sql);
+            sql = """
                     SELECT Min(T1.code) + 1 minCode FROM major T1
                     WHERE (T1.code + 1) NOT IN (SELECT T2.code FROM major T2)
                     AND EXISTS (SELECT T3.code FROM major T3 WHERE T3.code = 1)""";
@@ -191,7 +193,9 @@ public class DatabaseOperator {
             rs.next();
             int number = rs.getInt("minCode");
             sql = String.format("insert into major (code, name, class) values (%d, '%s', 0);", number, majorName);
-            System.out.println(sql);
+//            System.out.println(sql);
+            stmt.executeUpdate(sql);
+            sql = "delete from major where code = 0;";
             stmt.executeUpdate(sql);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -355,6 +359,7 @@ public class DatabaseOperator {
                 mapClassCode2Number.put(classCode, student_number);
                 mapMajorCode2Number.put(majorCode, mapMajorCode2Number.getOrDefault(majorCode, 0) + student_number);
             }
+            mapMajorCode2Number.put(-1, 0);
             //分流
             List<ProcessedStudent> psList = new ArrayList<>();
             for (UndivertedStudent us : usList) {
@@ -386,12 +391,15 @@ public class DatabaseOperator {
                 if (ps.major.equals("NULL")) continue;
                 int majorCode = mapMajorName2Code.get(ps.major);
                 List<Integer> myClassList = mapMajorCode2ClassList.get(majorCode);
-                for (int myClass : myClassList)
-                    if (mapClassCode2Number.get(myClass) == 0)
-                        myClassList.remove(myClass);
-                int randIndex = random.nextInt(myClassList.size());
 
-                int myClass = myClassList.get(randIndex);
+                List<Integer> tempClassList = new ArrayList<>();
+                for (int myClass : myClassList)
+                    if (mapClassCode2Number.get(myClass) != 0)
+                        tempClassList.add(myClass);
+                int randIndex = random.nextInt(tempClassList.size());
+
+                int myClass = tempClassList.get(randIndex);
+                mapClassCode2Number.put(myClass, mapClassCode2Number.get(myClass) - 1);
                 mapClassCode2PSList.get(myClass).add(ps);
             }
 
@@ -401,6 +409,9 @@ public class DatabaseOperator {
                     ps.classCode = classCode;
                 }
             }
+
+            sql = "delete from stu_info_processed where 1;";
+            stmt.executeUpdate(sql);
 
             for (ProcessedStudent ps : psList) {
                 int majorCode = mapMajorName2Code.getOrDefault(ps.major, -1);
@@ -454,12 +465,5 @@ public class DatabaseOperator {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-    }
-
-
-    public static void main(String[] args) {
-        UndivertedStudent us = new UndivertedStudent(2021902610, "刘文越", "男", 90);
-        DatabaseOperator DO = new DatabaseOperator();
-        DO.addUndivertedStudent(us);
     }
 }
